@@ -1,6 +1,9 @@
 package ru.netology.statsview.ui
 
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
+import android.animation.TypeEvaluator
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
@@ -9,7 +12,9 @@ import android.graphics.PointF
 import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
+import android.view.animation.AnimationSet
 import android.view.animation.LinearInterpolator
+import androidx.core.animation.doOnEnd
 import androidx.core.content.withStyledAttributes
 import ru.netology.statsview.R
 import ru.netology.statsview.utils.AndroidUtils
@@ -60,6 +65,9 @@ class StatsView @JvmOverloads constructor(
     private var progress = 0F
     private var startAngle = -90F
     private var valueAnimator: ValueAnimator? = null
+    private var ovalValueAnimator: ValueAnimator? = null
+    private var index = 0
+    private var angle = 0F
 
     private val paint = Paint(
         Paint.ANTI_ALIAS_FLAG,
@@ -107,32 +115,47 @@ class StatsView @JvmOverloads constructor(
         if (data.isEmpty()) {
             return
         }
-
         val sum = data.sum()
         var percent = 0F
         data.forEach { if (it != 0F) percent += (100F / (data.lastIndex + 1).toFloat()) }
-        canvas.drawCircle(center.x, center.y, radius, circlePaint)
-        data.forEachIndexed { index, datum ->
-            val angle = (360F * (percent / 100F)) * (datum / sum)
+        data[index].let { datum ->
+            angle = (360F * (percent / 100F)) * (datum / sum)
             paint.color = colors.getOrElse(index) { generateRandomColor() }
             canvas.drawArc(oval, startAngle, angle * progress, false, paint)
-            startAngle += angle
+            //startAngle += angle
         }
-        if (percent == 100F) {
-            data.first().let { datum ->
-                val angle = (360F * (percent / 100F)) * (datum / sum) / 360F
-                paint.color = colors.firstOrNull() ?: generateRandomColor()
-                canvas.drawArc(oval, startAngle, angle, false, paint)
-            }
-        }
-
-        canvas.drawText(
-            "%.2f%%".format(percent),
-            center.x,
-            center.y + textPaint.textSize / 4,
-            textPaint
-        )
     }
+//    override fun onDraw(canvas: Canvas) {
+//        if (data.isEmpty()) {
+//            return
+//        }
+//
+//        val sum = data.sum()
+//        var percent = 0F
+//        var i = 0
+//        data.forEach { if (it != 0F) percent += (100F / (data.lastIndex + 1).toFloat()) }
+//        canvas.drawCircle(center.x, center.y, radius, circlePaint)
+//        data.forEachIndexed { index, datum ->
+//            val angle = (360F * (percent / 100F)) * (datum / sum)
+//            paint.color = colors.getOrElse(index) { generateRandomColor() }
+//            canvas.drawArc(oval, startAngle, angle * progress, false, paint)
+//            startAngle += angle
+//        }
+//        if (percent == 100F) {
+//            data.first().let { datum ->
+//                val angle = (360F * (percent / 100F)) * (datum / sum) / 360F
+//                paint.color = colors.firstOrNull() ?: generateRandomColor()
+//                canvas.drawArc(oval, startAngle, angle, false, paint)
+//            }
+//        }
+//
+//        canvas.drawText(
+//            "%.2f%%".format(percent),
+//            center.x,
+//            center.y + textPaint.textSize / 4,
+//            textPaint
+//        )
+//    }
 
     private fun update() {
 
@@ -140,21 +163,45 @@ class StatsView @JvmOverloads constructor(
             it.removeAllListeners()
             it.cancel()
         }
+        ovalValueAnimator?.let {
+            it.removeAllListeners()
+            it.cancel()
+        }
         progress = 0F
-        startAngle = 0F
-
-        val angelHolder = PropertyValuesHolder.ofFloat("rotation", -90F, 270F)
-        val startAngelHolder = PropertyValuesHolder.ofFloat("angle", 0F, 1F)
-        valueAnimator = ValueAnimator.ofPropertyValuesHolder(angelHolder, startAngelHolder).apply {
+       //startAngle = 0F
+//
+//        val angelHolder = PropertyValuesHolder.ofFloat("rotation", -90F, 270F)
+//        val startAngelHolder = PropertyValuesHolder.ofFloat("angle", 0F, 1F)
+//        valueAnimator = ValueAnimator.ofPropertyValuesHolder(angelHolder, startAngelHolder).apply {
+//            addUpdateListener { anim ->
+//                startAngle = anim.getAnimatedValue("rotation") as Float
+//                progress = anim.getAnimatedValue("angle") as Float
+//                invalidate()
+//            }
+//            duration = 2500
+//            interpolator = LinearInterpolator()
+//        }.also {
+//            it.start()
+//        }
+        val angelHolder = PropertyValuesHolder.ofFloat("angle", 0F, 1F)
+        val ovalHolder = PropertyValuesHolder.ofInt("oval", 0, 3)
+        valueAnimator = ValueAnimator.ofPropertyValuesHolder(angelHolder).apply {
             addUpdateListener { anim ->
-                startAngle = anim.getAnimatedValue("rotation") as Float
                 progress = anim.getAnimatedValue("angle") as Float
                 invalidate()
             }
             duration = 2500
             interpolator = LinearInterpolator()
-        }.also {
-            it.start()
+        }
+        ovalValueAnimator = ValueAnimator.ofPropertyValuesHolder(ovalHolder).apply {
+            addUpdateListener { anim ->
+                index = anim.getAnimatedValue("oval") as Int
+                valueAnimator?.start()
+                invalidate()
+                anim.doOnEnd { startAngle += angle }
+            }
+            duration = 2500
+            interpolator = LinearInterpolator()
         }
     }
 
