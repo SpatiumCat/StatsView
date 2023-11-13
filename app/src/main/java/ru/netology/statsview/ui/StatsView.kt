@@ -32,11 +32,13 @@ class StatsView @JvmOverloads constructor(
     private var lineWidth = AndroidUtils.dp(context, 5)
     private var colors = emptyList<Int>()
     private var colorBackgroundCircle = 0
+    private var dataRealisation = 0
 
     init {
         context.withStyledAttributes(attributeSet, R.styleable.StatsView) {
             textSize = getDimension(R.styleable.StatsView_textSize, textSize)
             lineWidth = getDimension(R.styleable.StatsView_lineWidth, lineWidth.toFloat()).toInt()
+            dataRealisation = getInteger(R.styleable.StatsView_data_realization, 0)
 
             colors = listOf(
                 getColor(R.styleable.StatsView_color1, generateRandomColor()),
@@ -154,27 +156,58 @@ class StatsView @JvmOverloads constructor(
 
         canvas.drawCircle(center.x, center.y, radius, circlePaint)
 
-        data.forEachIndexed { index, datum ->
-            val angle =
-                max * (datum / sum) // Получаем угол дуги от той части окружности, которая должна быть заполнена
-            val sweepAngle = progressAngle - filled
-            paint.color = colors.getOrElse(index) { generateRandomColor() }
-            canvas.drawArc(
-                oval,
-                startAngle,
-                if (sweepAngle > angle) angle else sweepAngle,
-                false,
-                paint
-            )
-            startAngle += angle
-            filled += angle
-            if (filled > progressAngle) return
-        }
-        if (percent == 100F) {
-            data.first().let { datum ->
-                val angle = (360F * (percent / 100F)) * (datum / sum) / 360F
-                paint.color = colors.firstOrNull() ?: generateRandomColor()
-                canvas.drawArc(oval, startAngle, angle, false, paint)
+        when(dataRealisation) {
+            0 -> {
+                data.forEachIndexed { index, datum ->
+                    val angle =
+                        (360F * (percent / 100F)) * (datum / sum) // Получаем угол дуги от той части окружности, которая должна быть заполнена
+                    paint.color = colors.getOrElse(index) { generateRandomColor() }
+                    canvas.drawArc(oval, startAngle, angle * progress, false, paint)
+                    startAngle += angle
+                }
+                if (percent == 100F) {
+                    data.first().let { datum ->
+                        val angle = (360F * (percent / 100F)) * (datum / sum) / 360F
+                        paint.color = colors.firstOrNull() ?: generateRandomColor()
+                        canvas.drawArc(oval, startAngle, angle, false, paint)
+                    }
+                }
+            }
+
+            1 -> {
+                data.forEachIndexed { index, datum ->
+                    val angle =
+                        max * (datum / sum) // Получаем угол дуги от той части окружности, которая должна быть заполнена
+                    val sweepAngle = progressAngle - filled
+                    paint.color = colors.getOrElse(index) { generateRandomColor() }
+                    canvas.drawArc(
+                        oval,
+                        startAngle,
+                        if (sweepAngle > angle) angle else sweepAngle,
+                        false,
+                        paint
+                    )
+                    startAngle += angle
+                    filled += angle
+                    if (filled > progressAngle) return
+                }
+                if (percent == 100F) {
+                    data.first().let { datum ->
+                        val angle = (360F * (percent / 100F)) * (datum / sum) / 360F
+                        paint.color = colors.firstOrNull() ?: generateRandomColor()
+                        canvas.drawArc(oval, startAngle, angle, false, paint)
+                    }
+                }
+            }
+            2 -> {
+                data.forEachIndexed { index, datum ->
+                    val angle =
+                        (360F * (percent / 100F)) * (datum / sum) // Получаем угол дуги от той части окружности, которая должна быть заполнена
+                    paint.color = colors.getOrElse(index) { generateRandomColor() }
+                    canvas.drawArc(oval, startAngle + angle/2, (angle/2F) * (progress) , false, paint)
+                    canvas.drawArc(oval, startAngle + angle/2, (angle/2F) * (progress * -1F), false, paint)
+                    startAngle += angle
+                }
             }
         }
     }

@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="StatsView">
-        <attr name="textSize" format="dimension|reference"/>
-        <attr name="lineWidth" format="dimension|reference"/>
-        <attr name="color1" format="color|reference"/>
-        <attr name="color2" format="color|reference"/>
-        <attr name="color3" format="color|reference"/>
-        <attr name="color4" format="color|reference"/>
-        <attr name="colorBackgroundCircle" format="color|reference"/>
+        <attr name="textSize" format="dimension|reference" />
+        <attr name="lineWidth" format="dimension|reference" />
+        <attr name="color1" format="color|reference" />
+        <attr name="color2" format="color|reference" />
+        <attr name="color3" format="color|reference" />
+        <attr name="color4" format="color|reference" />
+        <attr name="colorBackgroundCircle" format="color|reference" />
+        <attr name="data_realization" format="enum">
+            <enum name="parallel" value="0" />
+            <enum name="sequential" value="1" />
+            <enum name="bidirectional" value="2"/>
+        </attr>
+
     </declare-styleable>
 </resources>

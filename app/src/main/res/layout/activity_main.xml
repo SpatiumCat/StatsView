@@ -17,6 +17,7 @@
         app:color3="#FFEB3B"
         app:color4="#00BCD4"
         app:colorBackgroundCircle="#D3D2D1"
+        app:data_realization="bidirectional"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
