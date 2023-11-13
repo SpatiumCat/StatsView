@@ -110,10 +110,10 @@ class StatsView @JvmOverloads constructor(
 
         val sum = data.sum()
         var percent = 0F
-        data.forEach { if (it != 0F) percent += (100F / (data.lastIndex + 1).toFloat()) }
+        data.forEach { if (it != 0F) percent += (100F / (data.lastIndex + 1).toFloat()) } // Соотношение данных в процентах без учета нулевых значений
         canvas.drawCircle(center.x, center.y, radius, circlePaint)
         data.forEachIndexed { index, datum ->
-            val angle = (360F * (percent / 100F)) * (datum / sum)
+            val angle = (360F * (percent / 100F)) * (datum / sum) // Получаем угол дуги от той части окружности, которая должна быть заполнена
             paint.color = colors.getOrElse(index) { generateRandomColor() }
             canvas.drawArc(oval, startAngle, angle * progress, false, paint)
             startAngle += angle
