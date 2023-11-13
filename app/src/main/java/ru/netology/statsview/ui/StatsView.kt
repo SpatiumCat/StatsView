@@ -58,7 +58,6 @@ class StatsView @JvmOverloads constructor(
     private var oval = RectF()
     private var circle = RectF()
     private var progress = 0F
-    private var startAngle = -90F
     private var valueAnimator: ValueAnimator? = null
 
     private val paint = Paint(
@@ -103,20 +102,73 @@ class StatsView @JvmOverloads constructor(
         )
     }
 
+    //    override fun onDraw(canvas: Canvas) {
+//        if (data.isEmpty()) {
+//            return
+//        }
+//
+//        val sum = data.sum()
+//        var percent = 0F
+//        data.forEach { if (it != 0F) percent += (100F / (data.lastIndex + 1).toFloat()) } // Соотношение данных в процентах без учета нулевых значений
+//        canvas.drawCircle(center.x, center.y, radius, circlePaint)
+//        data.forEachIndexed { index, datum ->
+//            val angle = (360F * (percent / 100F)) * (datum / sum) // Получаем угол дуги от той части окружности, которая должна быть заполнена
+//            paint.color = colors.getOrElse(index) { generateRandomColor() }
+//            canvas.drawArc(oval, startAngle, angle * progress, false, paint)
+//            startAngle += angle
+//        }
+//        if (percent == 100F) {
+//            data.first().let { datum ->
+//                val angle = (360F * (percent / 100F)) * (datum / sum) / 360F
+//                paint.color = colors.firstOrNull() ?: generateRandomColor()
+//                canvas.drawArc(oval, startAngle, angle, false, paint)
+//            }
+//        }
+//
+//        canvas.drawText(
+//            "%.2f%%".format(percent),
+//            center.x,
+//            center.y + textPaint.textSize / 4,
+//            textPaint
+//        )
+//    }
     override fun onDraw(canvas: Canvas) {
         if (data.isEmpty()) {
             return
         }
 
         val sum = data.sum()
+        var startAngle = -90F
         var percent = 0F
         data.forEach { if (it != 0F) percent += (100F / (data.lastIndex + 1).toFloat()) } // Соотношение данных в процентах без учета нулевых значений
+        var filled = 0F
+        val max = 360F * (percent / 100F)
+        val progressAngle = min(360F * progress, max)
+
+        canvas.drawText(
+            "%.2f%%".format(percent),
+            center.x,
+            center.y + textPaint.textSize / 4,
+            textPaint
+        )
+
         canvas.drawCircle(center.x, center.y, radius, circlePaint)
+
         data.forEachIndexed { index, datum ->
-            val angle = (360F * (percent / 100F)) * (datum / sum) // Получаем угол дуги от той части окружности, которая должна быть заполнена
+            val angle =
+                max * (datum / sum) // Получаем угол дуги от той части окружности, которая должна быть заполнена
+            val sweepAngle = progressAngle - filled
             paint.color = colors.getOrElse(index) { generateRandomColor() }
-            canvas.drawArc(oval, startAngle, angle * progress, false, paint)
+            canvas.drawArc(
+                oval,
+                startAngle,
+                if (sweepAngle > angle) angle else sweepAngle,
+                false,
+                paint
+            )
             startAngle += angle
+            filled += angle
+            if (filled > progressAngle) return
         }
         if (percent == 100F) {
             data.first().let { datum ->
@@ -125,14 +177,8 @@ class StatsView @JvmOverloads constructor(
                 canvas.drawArc(oval, startAngle, angle, false, paint)
             }
         }
-
-        canvas.drawText(
-            "%.2f%%".format(percent),
-            center.x,
-            center.y + textPaint.textSize / 4,
-            textPaint
-        )
     }
+
 
     private fun update() {
 
@@ -141,13 +187,12 @@ class StatsView @JvmOverloads constructor(
             it.cancel()
         }
         progress = 0F
-        startAngle = 0F
 
-        val angelHolder = PropertyValuesHolder.ofFloat("rotation", -90F, 270F)
+        //val angelHolder = PropertyValuesHolder.ofFloat("rotation", -90F, 270F)
         val startAngelHolder = PropertyValuesHolder.ofFloat("angle", 0F, 1F)
-        valueAnimator = ValueAnimator.ofPropertyValuesHolder(angelHolder, startAngelHolder).apply {
+        valueAnimator = ValueAnimator.ofPropertyValuesHolder(startAngelHolder).apply {
             addUpdateListener { anim ->
-                startAngle = anim.getAnimatedValue("rotation") as Float
+                // startAngle = anim.getAnimatedValue("rotation") as Float
                 progress = anim.getAnimatedValue("angle") as Float
                 invalidate()
             }
